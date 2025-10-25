@@ -16,10 +16,21 @@ except ImportError as e:
 class TorchForgeSender:
     """Sender class for sending tensor data to a TorchStore endpoint."""
     
+    _initialized_stores = set()
+    
     def __init__(self, endpoint: str):
         self.endpoint = endpoint
         self._store_name = f"torchforge_{endpoint}"
-        # Don't initialize here - do it in send() method
+        # Initialize TorchStore once per store name
+        if self._store_name not in self._initialized_stores:
+            try:
+                asyncio.run(torchstore.initialize(store_name=self._store_name))
+                self._initialized_stores.add(self._store_name)
+            except RuntimeError as e:
+                if "already initialized" in str(e):
+                    self._initialized_stores.add(self._store_name)
+                else:
+                    raise
     
     def send(self, data: dict):
         """Send tensor data to the TorchStore endpoint.
@@ -28,12 +39,6 @@ class TorchForgeSender:
             data: Dictionary containing 'fqn', 'meta', 'tensor', and 'version_id' keys
         """
         async def _send_async():
-            # Initialize TorchStore if not already done
-            try:
-                await torchstore.initialize(store_name=self._store_name)
-            except Exception:
-                pass  # Already initialized
-            
             # Use the fqn as the key and store the entire data dict
             key = data.get('fqn', 'unknown')
             await torchstore.put(key, data, store_name=self._store_name)
@@ -55,22 +60,32 @@ class TorchForgeSender:
             pass
 
 class TorchForgeProvider(StreamingWeightProvider):
+    _initialized_stores = set()
+    
     def __init__(self, endpoint: str, device: torch.device | None = None):
         self.endpoint = endpoint
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._store_name = f"torchforge_{endpoint}"
         self._q: "queue.Queue[StreamRecord]" = queue.Queue(maxsize=1024)
         self._stop = threading.Event()
+        
+        # Initialize TorchStore once per store name
+        if self._store_name not in self._initialized_stores:
+            try:
+                asyncio.run(torchstore.initialize(store_name=self._store_name))
+                self._initialized_stores.add(self._store_name)
+            except RuntimeError as e:
+                if "already initialized" in str(e):
+                    self._initialized_stores.add(self._store_name)
+                else:
+                    raise
+        
         self._thr = threading.Thread(target=self._run, daemon=True)
         self._thr.start()
 
     def _run(self):
         async def _async_run():
-            # Initialize TorchStore if not already done
-            try:
-                await torchstore.initialize(store_name=self._store_name)
-            except Exception:
-                pass  # Already initialized
+            # TorchStore is already initialized in __init__
             
             # Poll for new keys periodically
             last_keys = set()
