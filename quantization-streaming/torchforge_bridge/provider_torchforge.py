@@ -27,13 +27,22 @@ class TorchForgeSender:
         Args:
             data: Dictionary containing 'fqn', 'meta', 'tensor', and 'version_id' keys
         """
-        try:
+        async def _send_async():
+            # Initialize TorchStore if not already done
+            try:
+                await torchstore.initialize(store_name=self._store_name)
+            except Exception:
+                pass  # Already initialized
+            
             # Use the fqn as the key and store the entire data dict
             key = data.get('fqn', 'unknown')
+            await torchstore.put(key, data, store_name=self._store_name)
+        
+        try:
             # Run the async call synchronously
-            asyncio.run(torchstore.put(key, data, store_name=self._store_name))
+            asyncio.run(_send_async())
         except Exception as e:
-            print(f"Failed to send {key}: {e}")
+            print(f"Failed to send {data.get('fqn', 'unknown')}: {e}")
             raise
     
     def close(self):
