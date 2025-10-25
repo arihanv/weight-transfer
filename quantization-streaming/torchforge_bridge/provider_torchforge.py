@@ -19,21 +19,22 @@ class TorchForgeSender:
     def __init__(self, endpoint: str):
         self.endpoint = endpoint
         self._store_name = f"torchforge_{endpoint}"
-        # Initialize TorchStore if not already done
-        try:
-            torchstore.initialize(store_name=self._store_name)
-        except Exception:
-            pass  # Already initialized
+        # Don't initialize here - do it in send() method
     
-    async def send(self, data: dict):
+    def send(self, data: dict):
         """Send tensor data to the TorchStore endpoint.
         
         Args:
             data: Dictionary containing 'fqn', 'meta', 'tensor', and 'version_id' keys
         """
-        # Use the fqn as the key and store the entire data dict
-        key = data.get('fqn', 'unknown')
-        await torchstore.put(key, data, store_name=self._store_name)
+        try:
+            # Use the fqn as the key and store the entire data dict
+            key = data.get('fqn', 'unknown')
+            # Run the async call synchronously
+            asyncio.run(torchstore.put(key, data, store_name=self._store_name))
+        except Exception as e:
+            print(f"Failed to send {key}: {e}")
+            raise
     
     def close(self):
         """Close the client connection."""
@@ -58,7 +59,7 @@ class TorchForgeProvider(StreamingWeightProvider):
         async def _async_run():
             # Initialize TorchStore if not already done
             try:
-                torchstore.initialize(store_name=self._store_name)
+                await torchstore.initialize(store_name=self._store_name)
             except Exception:
                 pass  # Already initialized
             
@@ -72,6 +73,9 @@ class TorchForgeProvider(StreamingWeightProvider):
                     
                     # Find new keys
                     new_keys = current_keys_set - last_keys
+                    
+                    if new_keys:
+                        print(f"Found {len(new_keys)} new keys: {list(new_keys)}")
                     
                     for key in new_keys:
                         try:
@@ -92,6 +96,7 @@ class TorchForgeProvider(StreamingWeightProvider):
                             ver = int(data.get("version_id", 0))
                             rec = StreamRecord(fqn=fqn, meta=meta, payload=t, qmeta={}, version_id=ver)
                             self._q.put(rec)
+                            print(f"Processed key {key} successfully")
                             
                         except Exception as e:
                             print(f"Error processing key {key}: {e}")
