@@ -1,0 +1,7 @@
+Looking in indexes: https://download.pytorch.org/whl/nightly/cu126
+Collecting torchao
+  Downloading https://download.pytorch.org/whl/nightly/cu126/torchao-0.15.0.dev20251024%2Bcu126-cp310-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (20 kB)
+Downloading https://download.pytorch.org/whl/nightly/cu126/torchao-0.15.0.dev20251024%2Bcu126-cp310-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (6.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.8/6.8 MB 191.3 MB/s  0:00:00
+Installing collected packages: torchao
+Successfully installed torchao-0.15.0.dev20251024+cu126

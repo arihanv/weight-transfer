@@ -23,3 +23,4 @@ To reduce waste, we want to use fast CPU RAM as a double-ended buffer, so all tr
 * Neel Somani (@neelsomani)
 * Arihan Varanasi (@ar1v)
 * Markus Zhang (@photonmz)
+* Aryan Bansal (@imaginedragons0519)
