@@ -1,0 +1,20 @@
+wandb/
+
+__pycache__/
+
+# Normal python files
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzz
+*.pywzz
+*.pyzzz
+*.pywzzz
+
+# Normal model training
+checkpoints/
+logs/
+wandb/
