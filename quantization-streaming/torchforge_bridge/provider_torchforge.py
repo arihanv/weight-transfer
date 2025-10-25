@@ -7,9 +7,10 @@ import torch
 from .provider_base import ShardMeta, StreamRecord, StreamingWeightProvider
 
 try:
-    import torchforge  # type: ignore
+    import torchstore
+    from torchstore import Client
 except ImportError as e:
-    raise RuntimeError("TorchForge is required. pip install TorchForge or set PYTHONPATH") from e
+    raise RuntimeError("TorchStore is required for networking. Install torchstore or set PYTHONPATH") from e
 
 
 class TorchForgeSender:
@@ -17,7 +18,7 @@ class TorchForgeSender:
     
     def __init__(self, endpoint: str):
         self.endpoint = endpoint
-        self._client = torchforge.Client(endpoint)
+        self._client = Client(endpoint)
     
     def send(self, data: dict):
         """Send tensor data to the TorchForge endpoint.
@@ -60,7 +61,7 @@ class TorchForgeProvider(StreamingWeightProvider):
             rec = StreamRecord(fqn=fqn, meta=meta, payload=t, qmeta={}, version_id=ver)
             self._q.put(rec)
 
-        self._client = torchforge.Client(self.endpoint)
+        self._client = Client(self.endpoint)
         self._client.subscribe(on_tensor)
         self._client.run_until(self._stop)
 
